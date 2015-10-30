@@ -1,4 +1,4 @@
-function [img, imgr, imgH, imgrH] = eitModelingDifference_v3()
+function [img, imgr, imgH, imgrH] = eitModelingDifference_v4()
 % Gregory Poore
 % BME 462 Design
 

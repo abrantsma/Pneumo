@@ -1,4 +1,3 @@
-function [img, imgr, imgH, imgrH] = eitModelingDifference_v3()
 % Gregory Poore
 % BME 462 Design
 
@@ -10,15 +9,15 @@ stimStyle = '{ad}'; % '{ad}' == adjacent | '{op}' == opposite
 amperage = 1.0; % Amps
 dim = 2; % 2 for 2D circle, 3 for 3D cylinder
 SNR = 1.5; %4*rand(1);
-startNum = 3;
-removedMarbleNum = [1, 20, 23, 46, 49]; % appears to be X, X+1, X+8 or X+9
+addNoise = 0; % if addNoise == 1, then the SNR value is implemented
+removedMarbleNum = [2, 3, 11]; % appears to be X, X+1, X+8 or X+9
 % Saved removal numbers:
 % [1, 20, 23, 46, 49] gets rid of 4 corners
 % [2, 3, 11] % 
 
 % Make model
 nElec = 20;
-imdl = mk_common_model('h2d1c', nElec); % of inv_model 2D data structure
+imdl = mk_common_model('d2d1c', nElec); % of inv_model 2D data structure
 %imdl = mk_common_model('b3cr', nElec) % of inv_model 3D data structure
 
 imdl.reconst_type = 'difference';
@@ -37,30 +36,10 @@ imdl.fwd_model.meas_select = meas_select;
 %% Make image (i.e. conductivity value expression set)
 
 img = mk_image(imdl);
-imgNoMarbles = img;
-figure(); clf
-show_fem(imgNoMarbles)
-title('FEM Mesh with 13164 Nodes')
 
 %% Add 3D marble set for initial data to solve forward model
 
 marbleCoord = marbleCoordinates_v2(1/9, 1/10, dim);
-
-DelC1 = -1; % conductivity change of each marble
-img.elem_data = 1;
-for(i = 1:length(marbleCoord))
-    targets{i} = mk_c2f_circ_mapping(img.fwd_model, ...
-        transpose(marbleCoord(i,:)) );
-    img.elem_data = img.elem_data + DelC1*targets{i}(:,1);
-end
-
-vh = fwd_solve(img); % homogenous voltage data struct
-imgAllMarbles = img;
-
-
-%% Remove 3 marbles
-
-%% Add 3D marble set and remove 3 to solve forward model
 
 marbleCoordDrop3 = marbleCoord;
 marbleCoordDrop3(removedMarbleNum,:) = [];
@@ -77,8 +56,6 @@ vi = fwd_solve(img); % this returns the inhomogenous voltage data structure
 
 %% Add noise
 
-% for function
-addNoise = 1;
 if(addNoise == 1)
     vi = add_noise(SNR, vi, vh);
 end
@@ -87,12 +64,9 @@ end
 
 % Use Gauss-Newton one step solver for difference EIT
 
-imgr = inv_solve(imdl, vh, vi);
+imgr = inv_solve_abs_core(imdl, vi);
 
 %% Plotting
-figure(1); clf
-show_fem(imgAllMarbles)
-title('FEM Conductivity Map of Hexagonal Marbles')
 
 figure(2); clf
 imgH = subplot(1,2,1)
@@ -106,9 +80,7 @@ titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Adjacent Stimulation',SNR, ampe
 title(titleString);
 imgr.calc_colours.cb_shrink_move = [0.3,0.8,-0.02];
 common_colourbar([imgH imgrH],img)
-suptitle('Marble Removal - EIT Difference Reconstruction')
-
-end
+suptitle('Marble Removal - EIT Absolute Reconstruction')
 
 
 % h3 = subplot(1,3,3)

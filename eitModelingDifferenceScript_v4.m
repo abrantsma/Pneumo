@@ -1,4 +1,3 @@
-function [img, imgr, imgH, imgrH] = eitModelingDifference_v3()
 % Gregory Poore
 % BME 462 Design
 
@@ -11,7 +10,7 @@ amperage = 1.0; % Amps
 dim = 2; % 2 for 2D circle, 3 for 3D cylinder
 SNR = 1.5; %4*rand(1);
 startNum = 3;
-removedMarbleNum = [1, 20, 23, 46, 49]; % appears to be X, X+1, X+8 or X+9
+removedMarbleNum = [2, 3, 11]; % appears to be X, X+1, X+8 or X+9
 % Saved removal numbers:
 % [1, 20, 23, 46, 49] gets rid of 4 corners
 % [2, 3, 11] % 
@@ -107,8 +106,6 @@ title(titleString);
 imgr.calc_colours.cb_shrink_move = [0.3,0.8,-0.02];
 common_colourbar([imgH imgrH],img)
 suptitle('Marble Removal - EIT Difference Reconstruction')
-
-end
 
 
 % h3 = subplot(1,3,3)
