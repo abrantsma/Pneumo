@@ -8,12 +8,13 @@ zElec = 50; % Ohms
 stimStyle = '{ad}'; % '{ad}' == adjacent | '{op}' == opposite
 amperage = 1.0; % Amps
 dim = 2; % 2 for 2D circle, 3 for 3D cylinder
-SNR = 1.5; %4*rand(1);
+SNR = 3; %4*rand(1);
 startNum = 3;
-removedMarbleNum = [2, 3, 11]; % appears to be X, X+1, X+8 or X+9
+removedMarbleNum = [1, 20, 23, 46, 49]; % appears to be X, X+1, X+8 or X+9
 % Saved removal numbers:
 % [1, 20, 23, 46, 49] gets rid of 4 corners
 % [2, 3, 11] % 
+% [8,9,17] bottom middle triad
 
 % Make model
 nElec = 20;
@@ -37,9 +38,9 @@ imdl.fwd_model.meas_select = meas_select;
 
 img = mk_image(imdl);
 imgNoMarbles = img;
-figure(); clf
-show_fem(imgNoMarbles)
-title('FEM Mesh with 13164 Nodes')
+% figure(); clf
+% show_fem(imgNoMarbles)
+% title('FEM Mesh with 13164 Nodes')
 
 %% Add 3D marble set for initial data to solve forward model
 
@@ -89,23 +90,35 @@ end
 imgr = inv_solve(imdl, vh, vi);
 
 %% Plotting
-figure(1); clf
-show_fem(imgAllMarbles)
-title('FEM Conductivity Map of Hexagonal Marbles')
+% figure(1); clf
+% show_fem(imgAllMarbles)
+% title('FEM Conductivity Map of Hexagonal Marbles')
 
-figure(2); clf
-imgH = subplot(1,2,1)
+figure(2);
+clf
+imgH = subplot(1,3,1)
 show_fem(img)
-title('Location of marble removals')
+title('Location of marble removal')
 
-imgrH = subplot(1,2,2)
+imgrH = subplot(1,3,2)
 show_fem(imgr)
 %image_levels(imgr, [0])
 titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Adjacent Stimulation',SNR, amperage);
 title(titleString);
-imgr.calc_colours.cb_shrink_move = [0.3,0.8,-0.02];
-common_colourbar([imgH imgrH],img)
-suptitle('Marble Removal - EIT Difference Reconstruction')
+
+% imgrG = subplot(1,3,3)
+% show_fem(imgr)
+% %image_levels(imgr, [0])
+% titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Opposite Stimulation',SNR, amperage);
+% title(titleString);
+% imgr.calc_colours.cb_shrink_move = [0.3,0.8,-0.02];
+% common_colourbar([imgH imgrH imgrG],imgr)
+% suptitle('Marble Removal - EIT Difference Reconstruction')
+
+
+
+
+
 
 
 % h3 = subplot(1,3,3)

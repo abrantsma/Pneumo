@@ -5,7 +5,7 @@
 
 % Setup parameters
 zElec = 50; % Ohms
-stimStyle = '{ad}'; % '{ad}' == adjacent | '{op}' == opposite
+stimStyle = '{op}'; % '{ad}' == adjacent | '{op}' == opposite
 amperage = 1.0; % Amps
 dim = 2; % 2 for 2D circle, 3 for 3D cylinder
 SNR = 1.5; %4*rand(1);
@@ -76,7 +76,7 @@ title('Location of marble removals')
 imgrH = subplot(1,2,2)
 show_fem(imgr)
 %image_levels(imgr, [0])
-titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Adjacent Stimulation',SNR, amperage);
+titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Opposite Stimulation',SNR, amperage);
 title(titleString);
 imgr.calc_colours.cb_shrink_move = [0.3,0.8,-0.02];
 common_colourbar([imgH imgrH],img)
