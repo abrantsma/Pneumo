@@ -5,20 +5,22 @@
 
 % Setup parameters
 zElec = 50; % Ohms
-stimStyle = '{ad}'; % '{ad}' == adjacent | '{op}' == opposite
-amperage = 1.0; % Amps
+stimStyleInject = '{op}'; % '{ad}' == adjacent | '{op}' == opposite
+stimStyleMeasure = '{mono}'; % '{ad}' == adjacent | '{op}' == opposite
+amperage = 0.020; % Amps
 dim = 2; % 2 for 2D circle, 3 for 3D cylinder
 SNR = 3; %4*rand(1);
 startNum = 3;
-removedMarbleNum = [1, 20, 23, 46, 49]; % appears to be X, X+1, X+8 or X+9
+removedMarbleNum = [19, 20, 26]; % appears to be X, X+1, X+8 or X+9
 % Saved removal numbers:
-% [1, 20, 23, 46, 49] gets rid of 4 corners
-% [2, 3, 11] % 
+% [1, 20, 23, 46, 49] "X"
+% [2, 3, 11] center
 % [8,9,17] bottom middle triad
+% [19, 20, 26] upper right
 
 % Make model
 nElec = 20;
-imdl = mk_common_model('h2d1c', nElec); % of inv_model 2D data structure
+imdl = mk_common_model('d2d1c', nElec); % of inv_model 2D data structure
 %imdl = mk_common_model('b3cr', nElec) % of inv_model 3D data structure
 
 imdl.reconst_type = 'difference';
@@ -27,9 +29,11 @@ for (i = 1:length(nElec))
 end
 
 % Change stimulation and measurement parameters
-options = {'no_meas_current','no_rotate_meas','balance_inj'};
-[stim, meas_select] = mk_stim_patterns(nElec,1,stimStyle,...
-    stimStyle,options, amperage);
+options = {'meas_current','no_rotate_meas','balance_inj'};
+[stim, meas_select] = mk_stim_patterns(nElec,1,...
+    [1,11],...
+    [1],...
+    options, amperage);
 imdl.fwd_model.stimulation = stim;
 imdl.fwd_model.meas_select = meas_select;
 
@@ -58,8 +62,6 @@ vh = fwd_solve(img); % homogenous voltage data struct
 imgAllMarbles = img;
 
 
-%% Remove 3 marbles
-
 %% Add 3D marble set and remove 3 to solve forward model
 
 marbleCoordDrop3 = marbleCoord;
@@ -83,6 +85,26 @@ if(addNoise == 1)
     vi = add_noise(SNR, vi, vh);
 end
 
+%% Detect measurement and stimulation pattern
+
+switch stimStyleInject
+    case '{ad}'
+        stimName = 'Adjacent';
+    case '{op}'
+        stimName = 'Opposite';
+    case '{mono}'
+        stimName = 'Monopole';
+end
+
+switch stimStyleMeasure
+    case '{ad}'
+        measName = 'Adjacent';
+    case '{op}'
+        measName = 'Opposite';
+    case '{mono}'
+        measName = 'Monopole';
+end
+
 %% Difference EIT solver
 
 % Use Gauss-Newton one step solver for difference EIT
@@ -93,17 +115,18 @@ imgr = inv_solve(imdl, vh, vi);
 % figure(1); clf
 % show_fem(imgAllMarbles)
 % title('FEM Conductivity Map of Hexagonal Marbles')
+titleString = sprintf('SNR = %0.1f, Amp = %0.2f, %s Stimulation, %s Measure',...
+    SNR, amperage, stimName, measName);
 
 figure(2);
 clf
-imgH = subplot(1,3,1)
+imgH = subplot(1,2,1)
 show_fem(img)
 title('Location of marble removal')
 
-imgrH = subplot(1,3,2)
+imgrH = subplot(1,2,2)
 show_fem(imgr)
 %image_levels(imgr, [0])
-titleString = sprintf('SNR = %0.1f, Amp = %0.2f, Adjacent Stimulation',SNR, amperage);
 title(titleString);
 
 % imgrG = subplot(1,3,3)

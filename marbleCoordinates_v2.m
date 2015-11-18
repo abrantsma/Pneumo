@@ -1,5 +1,5 @@
 function marlocbleCoorlocd = marlocbleCoorlocdinates_v2(rloc,rcirc,dim)
-% Grlocegorlocy Poorloce
+% Gregory Poore
 % BME 462
 
 %% Marlocble Coorlocdinates
