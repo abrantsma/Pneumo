@@ -1,6 +1,60 @@
+function [imgr,vh,vi] = imageReconstruction_v2(csvBaseline,csvAdj,meshComplexity,...
+    imagePrior, hyperSet, fixedNFValue, nodalSolve)
+
+% csvBaseline: voltage values with columns being electrodes numbered 1
+% through n and rows being oppositely stimulated electrodes beginning with
+% 1 & (n/2+1)
+% csvAdj: voltage values after conductivity map change; same format as
+% csvBaseline
+% meshComplexity: integer 1-10, where 1 is the lowest resolution FEM mesh
+% and 10 is the highest FEM resolution; note that computing time does NOT
+% likely scale linearly 
+% imagePrior: Bayesian prior for image reconstruction; options include
+% 'Tik', 'NOSER', 'La', 'totVar', 'none'; default is 'none'
+% hyperSet: select a lambda hyperparameter to control the degree of
+% regularization; options include 'none', Val for heuristic (e.g. 0.01), 
+% or 'Auto' for the fixedNF method; default is 'none'
+% fixedNFValue: value to iterate to using the fixedNF method
+% nodalSolve: 'T' to solve at the nodes or 'F' to solve using the FEM
+% triangles; this smoothens the image at low poly values; default is 'T'
 % Gregory Poore
 % BME 462 Design
 % Image Reconstruction
+
+%% Running notes
+
+% - NOSER prior and totVar with their given hyperP work well
+% - For Nov20ThreeClumped2Sheet1.csv, fixedNF gave hyperSet = 0.0182
+
+%% Check function inputs
+
+if(nargin==6)
+    nodalSolve = 'T';
+elseif(nargin==5)
+    fixedNFValue = 0.4;
+    nodalSolve = 'F'
+elseif(nargin==4)
+    hyperSet = 'none';
+    fixedNFValue = 0.4;
+    nodalSolve = 'T';
+elseif(nargin==3)
+    imagePrior = 'none';
+    hyperSet = 'none';
+    fixedNFValue = 0.4;
+    nodalSolve = 'T';
+elseif(nargin==2)
+    meshComplexity = 3;
+    imagePrior = 'none';
+    hyperSet = 'none';
+    fixedNFValue = 0.4;
+    nodalSolve = 'T';
+elseif(nargin<2)
+    error('Need to give data to analyze!')
+end
+
+meshComplexityOptions = ['a' 'b' 'c' 'd' 'e' 'f' 'g' 'h' 'i' 'j'];
+meshChoice = meshComplexityOptions(meshComplexity);
+meshString = sprintf('%s2d1c',meshChoice);
 
 %% Initialize
 
@@ -8,29 +62,32 @@
 % enter 'run startup.m' to initialize the package
 
 % Read in data
-baseline = csvread('BigDaddyDataBaseline1.csv');
-config1  = csvread('BigDaddyDataConfig1.csv');
-config2  = csvread('BigDaddyDataConfig2.csv');
+baseline = csvread(csvBaseline);
+config1  = csvread(csvAdj);
 
 % Setup parameters
 zElec = 20; % Ohms
 stimStyleInject = '{op}'; % '{ad}' == adjacent | '{op}' == opposite
 stimStyleMeasure = '{mono}'; % '{ad}' == adjacent | '{op}' == opposite
-amperage = 0.02; % Amps
-imagePrior = 'NOSER'; % 'Tik' = Tikhonov, 'NOSER' = NOSER, 'La' = LaPlace, 
+amperage = 0.007; % Amps
+imagePrior = imagePrior % 'Tik' = Tikhonov, 'NOSER' = NOSER, 'La' = LaPlace, 
 % 'none'= Default prior set, 'totVar'.
-% Note that many of the priors have preferred hyper
-hyperSet = 'none'; % 'H'= Heuristic = 0.01, 'Auto' = automatic selection, 
+
+% Note that many of the priors have preferred hyperparameters, meaning that
+% hyperSet should be 'none' unless you have a reason to calculate it using
+% the fixed NF method or heuristic.
+
+hyperSet = hyperSet % 'Auto' = automatic selection, Val (e.g. 0.01), or
 % 'none'; Note that 'Auto' can take a while to run but has good results
-fixedNFValue = 0.4; % only applies when 'Auto' is selected for the 
+fixedNFValue = fixedNFValue; % only applies when 'Auto' is selected for the 
 % hyperSet variable, which uses the fixedNF method
-nodalSolve = 'T'; % Solve on FEM triangles or nodes? Nodes are smoother
+nodalSolve = nodalSolve; % Solve on FEM triangles or nodes? Nodes are smoother
 
 %% Make mesh and inverse model
 
 % Make model
 nElec = 20;
-imdl = mk_common_model('d2d1c', nElec); % of inv_model 2D data structure
+imdl = mk_common_model(meshString, nElec); % of inv_model 2D data structure
 
 imdl.reconst_type = 'difference';
 for (i = 1:length(nElec))
@@ -38,10 +95,10 @@ for (i = 1:length(nElec))
 end
 
 % Change stimulation and measurement parameters
-options = {'meas_current','no_rotate_meas','balance_inj'};
+options = {'meas_current', 'no_balance_inj', 'no_balance_meas'};
 [stim, meas_select] = mk_stim_patterns(nElec,1,...
     [0,10],...
-    [0],...
+    [10],...
     options, amperage);
 imdl.fwd_model.stimulation = stim;
 imdl.fwd_model.meas_select = meas_select;
@@ -59,8 +116,7 @@ imdl.fwd_model.meas_select = meas_select;
 %% Convert data to vh and vi matrices
 
 vh = reshape(transpose(baseline),[400,1]);
-vi1 = reshape(transpose(config1),[400,1]);
-vi2 = reshape(transpose(config2),[400,1]);
+vi = reshape(transpose(config1),[400,1]);
 
 %% Detect measurement and stimulation pattern
 
@@ -131,18 +187,16 @@ end
 % the initialization section, or an automated hyperparameter can be found
 % by making hyperSet='Auto'
 
-switch hyperSet
-    case 'H' % Heuristic
-        imdl.hyperparameter.value= .01;
-    case 'Auto'
-        % Uses fixed NF method
-        imdl.hyperparameter = rmfield(imdl.hyperparameter,'value');
-        imdl.hyperparameter.func = @choose_noise_figure;
-        % Select the NF value; Graham & Adler (2005) found that a NF=1
-        % gave them the lowest blur radius
-        imdl.hyperparameter.noise_figure= fixedNFValue;
-        imdl.hyperparameter.tgt_elems= 1:4;
-    case 'none'
+if(isnumeric(hyperSet))
+    imdl.hyperparameter.value = hyperSet;
+elseif(hyperSet=='Auto')
+    % Uses fixed NF method
+    imdl.hyperparameter = rmfield(imdl.hyperparameter,'value');
+    imdl.hyperparameter.func = @choose_noise_figure;
+    imdl.hyperparameter.noise_figure= fixedNFValue;
+    imdl.hyperparameter.tgt_elems= 1:4;
+elseif(hyperSet=='none')
+    % Nothing
 end
 
 %% Difference EIT solver
@@ -152,22 +206,22 @@ end
 if(nodalSolve=='T')
     imdl.solve = @nodal_solve;
 elseif(nodalSolve=='F')
-    imdl.solve=[];
+    % Nothing
 end
 
 % Use Gauss-Newton one step solver for difference EIT
-imgr = inv_solve(imdl, vh, vi1);
+imgr = inv_solve(imdl, vh, vi);
 
 %% Plotting
 figure(1); clf
-subplot(1,2,1)
-z = calc_slices(imgr);
-c = calc_colours(z);
-h = mesh(z,c);
-set(h, 'CDataMapping', 'direct' );
-view(173,34)
-
-subplot(1,2,2)
+% subplot(1,2,1)
+% z = calc_slices(imgr);
+% c = calc_colours(z);
+% h = mesh(z,c);
+% set(h, 'CDataMapping', 'direct' );
+% view(173,34)
+% 
+% subplot(1,2,2)
 show_fem(imgr)
 titleString = sprintf('Reconstruction, Amp = %0.2f, %s Stimulation, %s Measure',...
     amperage, stimName, measName);

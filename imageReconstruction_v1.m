@@ -2,6 +2,10 @@
 % BME 462 Design
 % Image Reconstruction
 
+%% Running notes
+
+% - NOSER prior and totVar with their given hyperP work well
+
 %% Initialize
 
 % If you have not already, make sure to load into the EIDROS directory and
@@ -17,7 +21,7 @@ zElec = 20; % Ohms
 stimStyleInject = '{op}'; % '{ad}' == adjacent | '{op}' == opposite
 stimStyleMeasure = '{mono}'; % '{ad}' == adjacent | '{op}' == opposite
 amperage = 0.02; % Amps
-imagePrior = 'NOSER'; % 'Tik' = Tikhonov, 'NOSER' = NOSER, 'La' = LaPlace, 
+imagePrior = 'totVar'; % 'Tik' = Tikhonov, 'NOSER' = NOSER, 'La' = LaPlace, 
 % 'none'= Default prior set, 'totVar'.
 
 % Note that many of the priors have preferred hyperparameters, meaning that
@@ -164,14 +168,14 @@ imgr = inv_solve(imdl, vh, vi1);
 
 %% Plotting
 figure(1); clf
-subplot(1,2,1)
-z = calc_slices(imgr);
-c = calc_colours(z);
-h = mesh(z,c);
-set(h, 'CDataMapping', 'direct' );
-view(173,34)
+% subplot(1,2,1)
+% z = calc_slices(imgr);
+% c = calc_colours(z);
+% h = mesh(z,c);
+% set(h, 'CDataMapping', 'direct' );
+% view(173,34)
 
-subplot(1,2,2)
+% subplot(1,2,2)
 show_fem(imgr)
 titleString = sprintf('Reconstruction, Amp = %0.2f, %s Stimulation, %s Measure',...
     amperage, stimName, measName);
