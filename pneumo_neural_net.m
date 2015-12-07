@@ -59,7 +59,7 @@ targets = etioBactVsViralTarget;
 % Create a Pattern Recognition Network
 hiddenLayerSize = 1000;
 
-limit = 1000;
+limit = 500;
 conf = zeros(1,limit);
 for n=1:limit
     net = patternnet(hiddenLayerSize);
@@ -69,7 +69,10 @@ for n=1:limit
     net.divideParam.valRatio = 0/100;
     net.divideParam.testRatio = 25/100;
     % Train the Network
-    [net,tr] = train(net,inputs,targets);
+    [X, idx] = datasample(inputs', 8);
+    X = X';
+    Y = targets(:,idx);
+    [net,tr] = train(net,X,Y);
     % Test the Network
     outputs = net(inputs);
     errors = gsubtract(targets,outputs);
