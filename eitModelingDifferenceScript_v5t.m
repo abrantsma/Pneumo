@@ -25,7 +25,7 @@ t1 = toc()
 
 % Make model
 nElec = 20;
-imdl = mk_common_model('d2d1c', nElec); % of inv_model 2D data structure
+load common_model1; % of inv_model 2D data structure
 %imdl = mk_common_model('b3cr', nElec) % of inv_model 3D data structure
 t1a = toc()
 imdl.reconst_type = 'difference';
