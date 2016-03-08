@@ -64,6 +64,7 @@ t5 = toc()
 
 DelC1 = -1; % conductivity change of each marble
 img.elem_data = 1;
+targets = cell(1, length(marbleCoord));
 for(i = 1:length(marbleCoord))
     targets{i} = mk_c2f_circ_mapping(img.fwd_model, ...
         transpose(marbleCoord(i,:)) );
