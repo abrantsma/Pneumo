@@ -21,7 +21,7 @@ removedMarbleNum = [19, 20, 26]; % appears to be X, X+1, X+8 or X+9
 % [8,9,17] bottom middle triad
 % [19, 20, 26] upper right
 
-toc()
+t1 = toc()
 
 % Make model
 nElec = 20;
@@ -33,7 +33,7 @@ for (i = 1:length(nElec))
     imdl.fwd_model.electrode(i).z_contact = [zElec];
 end
 
-toc()
+t2 = toc()
 
 % Change stimulation and measurement parameters
 options = {'meas_current','no_rotate_meas','balance_inj'};
@@ -44,7 +44,7 @@ options = {'meas_current','no_rotate_meas','balance_inj'};
 imdl.fwd_model.stimulation = stim;
 imdl.fwd_model.meas_select = meas_select;
 
-toc()
+t3 = toc()
 
 %% Make image (i.e. conductivity value expression set)
 
@@ -54,13 +54,13 @@ imgNoMarbles = img;
 % show_fem(imgNoMarbles)
 % title('FEM Mesh with 13164 Nodes')
 
-toc()
+t4 = toc()
 
 %% Add 3D marble set for initial data to solve forward model
 
 marbleCoord = marbleCoordinates_v2(1/9, 1/10, dim);
 
-toc()
+t5 = toc()
 
 DelC1 = -1; % conductivity change of each marble
 img.elem_data = 1;
@@ -70,19 +70,19 @@ for(i = 1:length(marbleCoord))
     img.elem_data = img.elem_data + DelC1*targets{i}(:,1);
 end
 
-toc()
+t6 = toc()
 
 vh = fwd_solve(img); % homogenous voltage data struct
 imgAllMarbles = img;
 
-toc()
+t7 = toc()
 
 %% Add 3D marble set and remove 3 to solve forward model
 
 marbleCoordDrop3 = marbleCoord;
 marbleCoordDrop3(removedMarbleNum,:) = [];
 
-toc()
+t8 = toc()
 
 DelC1 = -1; % conductivity change of each marble
 img.elem_data = 1;
@@ -92,11 +92,11 @@ for(i = 1:length(marbleCoordDrop3))
     img.elem_data = img.elem_data + DelC1*targets{i}(:,1);
 end
 
-toc()
+t9 = toc()
 
 vi = fwd_solve(img); % this returns the inhomogenous voltage data structure
 
-toc()
+t10 = toc()
 
 %% Add noise
 
@@ -106,7 +106,7 @@ if(addNoise == 1)
     vi = add_noise(SNR, vi, vh);
 end
 
-toc()
+t11 = toc()
 
 %% Detect measurement and stimulation pattern
 
@@ -128,7 +128,7 @@ switch stimStyleMeasure
         measName = 'Monopole';
 end
 
-toc()
+t12 = toc()
 
 %% Difference EIT solver
 
@@ -136,7 +136,7 @@ toc()
 
 imgr = inv_solve(imdl, vh, vi);
 
-toc()
+t13 = toc()
 
 %% Plotting
 % figure(1); clf
@@ -151,14 +151,14 @@ imgH = subplot(1,2,1)
 show_fem(img)
 title('Location of marble removal')
 
-toc()
+t14 = toc()
 
 imgrH = subplot(1,2,2)
 show_fem(imgr)
 %image_levels(imgr, [0])
 title(titleString);
 
-toc()
+t15 = toc()
 
 % imgrG = subplot(1,3,3)
 % show_fem(imgr)
