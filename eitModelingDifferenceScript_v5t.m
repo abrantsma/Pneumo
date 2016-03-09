@@ -65,9 +65,11 @@ t5 = toc()
 DelC1 = -1; % conductivity change of each marble
 img.elem_data = 1;
 targets = cell(1, length(marbleCoord));
+transposed_marbleCoord = transpose(marbleCoord);
+transposed_cells_of_marbleCoord = num2cell(transposed_marbleCoord, 1);
+targets = parcellfun(4, @(xyzr)mk_c2f_circ_mapping(img.fwd_model, xyzr), transposed_cells_of_marbleCoord, "UniformOutput", false);
+t5a = toc()
 for(i = 1:length(marbleCoord))
-    targets{i} = mk_c2f_circ_mapping(img.fwd_model, ...
-        transpose(marbleCoord(i,:)) );
     img.elem_data = img.elem_data + DelC1*targets{i}(:,1);
 end
 
@@ -87,9 +89,12 @@ t8 = toc()
 
 DelC1 = -1; % conductivity change of each marble
 img.elem_data = 1;
+targets = cell(1, length(marbleCoord));
+transposed_marbleCoordDrop3 = transpose(marbleCoordDrop3);
+transposed_cells_of_marbleCoordDrop3 = num2cell(transposed_marbleCoordDrop3, 1);
+targets = parcellfun(4, @(xyzr)mk_c2f_circ_mapping(img.fwd_model, xyzr), transposed_cells_of_marbleCoordDrop3, "UniformOutput", false);
+t8a = toc()
 for(i = 1:length(marbleCoordDrop3))
-    targets{i} = mk_c2f_circ_mapping(img.fwd_model, ...
-        transpose(marbleCoordDrop3(i,:)) );
     img.elem_data = img.elem_data + DelC1*targets{i}(:,1);
 end
 
